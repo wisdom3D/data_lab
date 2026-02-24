@@ -1,0 +1,10 @@
+[
+    {
+        "name": "events",
+        "path": "/opt/airflow/data/events.csv"
+    },
+    {
+        "name": "demandes_services",
+        "path": "/opt/airflow/data/demandes_services_publics_togo.json"
+    }
+]

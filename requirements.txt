@@ -1,0 +1,7 @@
+pandas
+numpy
+sqlalchemy
+minio
+pymongo
+psycopg2-binary
+boto3
