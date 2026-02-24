@@ -45,12 +45,11 @@ The following services are orchestrated via Docker Compose:
 
 - **`raw_data_ingestion_minio`**: Ingests files from local sources into the MinIO `raw` bucket.
 - **`clean_parquet_to_postgis`**: Processes raw Parquet data from MinIO and loads it into the PostGIS database.
-- **`process_raw_to_postgis_dag.py`**: A dedicated DAG for raw-to-db processing.
+- **`process_raw_to_postgis_dag.py`**: A dedicated DAG for raw-to-db processing, now including automated region generation from event coordinates.
 - **`validate_and_partition.py`**: Ensures data quality and manages database partitioning.
 
 ## Project Structure
 
-- `airflow/dags/`: Data pipeline definitions.
-- `sql/`: Database schemas and migration scripts.
+- `sql/`: Database schemas (Events, Regions, Logs).
 - `data/`: Local landing zone for raw data (excluded from Git).
 - `docker-compose.yml`: Infrastructure as code.

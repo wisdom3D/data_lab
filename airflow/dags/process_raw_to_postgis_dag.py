@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
 # ================================
 # CONFIGURATION
@@ -26,18 +26,24 @@ with DAG(
 
     start = EmptyOperator(task_id="start")
 
-    # 1. S'assurer que la table events existe
-    setup_postgis_table = PostgresOperator(
+    setup_postgis_table = SQLExecuteQueryOperator(
         task_id="setup_postgis_events_table",
-        postgres_conn_id=PG_CONN_ID,
+        conn_id=PG_CONN_ID,
         sql="create_postgis_events.sql"
+    )
+
+    # 1alt. S'assurer que la table regions existe
+    setup_regions_table = SQLExecuteQueryOperator(
+        task_id="setup_regions_table",
+        conn_id=PG_CONN_ID,
+        sql="setup_regions_table.sql"
     )
 
     # 2. Transformer raw_events en events (Upsert logic)
     # Note: On cast les types pour correspondre au schéma cible
-    process_spatial_data = PostgresOperator(
+    process_spatial_data = SQLExecuteQueryOperator(
         task_id="raw_to_spatial_events",
-        postgres_conn_id=PG_CONN_ID,
+        conn_id=PG_CONN_ID,
         sql="""
             INSERT INTO datalab.events (id, timestamp, geom, value, category, source)
             SELECT 
@@ -59,4 +65,4 @@ with DAG(
 
     end = EmptyOperator(task_id="end")
 
-    start >> setup_postgis_table >> process_spatial_data >> end
+    start >> [setup_postgis_table, setup_regions_table] >> process_spatial_data >> end
