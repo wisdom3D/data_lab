@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # ===============================
+  # Traefik : Reverse Proxy & SSL
+  # ===============================
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=votre-email@domaine.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    restart: always
+
+  # ===============================
+  # Airflow Webserver (Secured)
+  # ===============================
+  airflow-webserver:
+    ports: !reset [] # Désactive l'accès direct via le port 8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.airflow.rule=Host(`airflow.datalab.votre-domaine.com`)"
+      - "traefik.http.routers.airflow.entrypoints=websecure"
+      - "traefik.http.routers.airflow.tls.certresolver=myresolver"
+      - "traefik.http.services.airflow.loadbalancer.server.port=8080"
+
+  # ===============================
+  # Superset (Secured)
+  # ===============================
+  superset:
+    ports: !reset [] # Désactive l'accès direct via le port 8088
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.superset.rule=Host(`superset.datalab.votre-domaine.com`)"
+      - "traefik.http.routers.superset.entrypoints=websecure"
+      - "traefik.http.routers.superset.tls.certresolver=myresolver"
+      - "traefik.http.services.superset.loadbalancer.server.port=8088"
+
+  # ===============================
+  # MinIO Console (Secured)
+  # ===============================
+  minio:
+    ports: !reset []
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio.rule=Host(`s3.datalab.votre-domaine.com`)"
+      - "traefik.http.routers.minio.entrypoints=websecure"
+      - "traefik.http.routers.minio.tls.certresolver=myresolver"
+      - "traefik.http.services.minio.loadbalancer.server.port=9001"
+
+  # Sécurité : On retire l'exposition des bases de données sur l'extérieur
+  postgres:
+    ports: !reset []
+  redis:
+    ports: !reset []
